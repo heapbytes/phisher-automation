@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phisher Automates</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        .main-container {
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+        .left-box {
+            width: 20%;
+            max-width: 300px;
+            padding: 20px;
+            border-right: 1px solid #ddd;
+            box-sizing: border-box;
+        }
+        .right-box {
+            width: 80%;
+            padding: 20px;
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            box-sizing: border-box;
+        }
+        .left-output {
+            flex: 3;
+            display: flex;
+            flex-direction: column;
+        }
+        .output-box, .actions-box {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            padding: 15px;
+            overflow-y: auto;
+        }
+        .output-box {
+            flex: 1;
+            margin-bottom: 20px;
+        }
+        .email-body-box {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 2px;
+            background-color: #f8f9fa;
+            padding: 15px;
+            overflow-y: auto;
+            height: 100%; /* Use full height */
+        }
+        .actions-box {
+            flex: 0.3;
+            min-height: 250px; /* Adjust the height to be larger */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* To properly space elements */
+        }
+        .output-title, .email-title, .actions-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+        .copy-btn {
+            font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        /* Inline form styling for Performable Actions */
+        .actions-form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .actions-form input, .actions-form select, .actions-form button {
+            flex: 1;
+        }
+        .actions-form button {
+            flex: 0.5;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Left box for form -->
+        <div class="left-box bg-light">
+            <form id="phisher-form" method="POST" action="/">
+                <div class="mb-3">
+                    <label for="input_data" class="form-label">Enter Phisher ID:</label>
+                    <input type="text" class="form-control" id="phisher-id" name="input_data" placeholder="Enter Phisher ID" required>
+                </div>
+                <div class="form-row mb-3">
+                    <div>
+                        <button type="submit" class="btn btn-primary mt-4">Submit</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <!-- Right box for output and email -->
+        <div class="right-box">
+            <!-- Left Output Section (Output + Performable Actions) -->
+            <div class="left-output">
+                <!-- Output Box -->
+                <div class="output-box">
+                    <div class="output-title">
+                        <h5>Output:</h5>
+                        <button class="btn btn-secondary copy-btn" id="copy-btn">
+                            <i class="bi bi-clipboard"></i> Copy
+                        </button>
+                    </div>
+                    <pre id="output-text">{{ result | default("Your output will appear here.") }}</pre>
+                </div>
+                <!-- Performable Actions Box -->
+                <div class="actions-box">
+                    <div class="actions-title">
+                        <h5>Required Actions:</h5>
+                    </div>
+                    <!-- Action Items -->
+                    <ul>
+                        {% for k,v in performable_actions.items() %}
+                        <li style="color: red;"> {{v}} </li> 
+                        {% endfor %}
+                    </ul>
+                    <!-- Inline Form for Performable Actions -->
+                    <form class="actions-form" id="actions-form" onsubmit="return appendAction(event);">
+                        <!-- Input box with placeholder "Actions taken:" -->
+                        <input type="text" class="form-control" name="actions_taken" placeholder="Actions taken:" required>
+                        <!-- Dropdown Menu -->
+                        <select class="form-select" name="severity_level" required>
+                            <option value="" selected disabled>Select Severity Level</option>
+                            <option value="CLEAN">CLEAN</option>
+                            <option value="SPAM">SPAM</option>
+                            <option value="THREAT">THREAT</option>
+                            <!--
+                            <option value="clean_resolved_low">CLEAN, RESOLVED, LOW</option>
+                            <option value="clean_resolved_medium">CLEAN, RESOLVED, MEDIUM</option>
+                            <option value="clean_resolved_high">CLEAN, RESOLVED, HIGH</option>
+                            <option value="spam_resolved_low">SPAM, RESOLVED, LOW</option>
+                            <option value="spam_resolved_medium">SPAM, RESOLVED, MEDIUM</option>
+                            <option value="spam_resolved_high">SPAM, RESOLVED, HIGH</option>
+                            <option value="phishing_resolved_low">PHISHING, RESOLVED, LOW</option>
+                            <option value="phishing_resolved_medium">PHISHING, RESOLVED, MEDIUM</option>
+                            <option value="phishing_resolved_high">PHISHING, RESOLVED, HIGH</option>
+                            <option value="threat_resolved_low">THREAT, RESOLVED, LOW</option>
+                            <option value="threat_resolved_medium">THREAT, RESOLVED, MEDIUM</option>
+                            <option value="threat_resolved_high">THREAT, RESOLVED, HIGH</option> -->
+                        </select>
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary hidden" id="action-submit-btn">Submit</button>
+                    </form>
+                </div>
+            </div>
+            <!-- Email Body Box -->
+            <div class="email-body-box">
+                <div class="email-title">
+                    <h5>Email Body:</h5>
+                </div>
+                <pre>{{ email_body_result | default("This is where the email body will be shown.") }}</pre>
+            </div>
+        </div>
+    </div>
+    <!-- Bootstrap JS and Bootstrap Icons -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Function to colorize the output based on specific criteria
+        function colorizeOutput() {
+            const outputElement = document.getElementById('output-text');
+            const lines = outputElement.innerHTML.split('\n');
+    
+            const updatedLines = lines.map(line => {
+                let colorClass = '';
+                if (line.startsWith("SENDER IP:") || line.startsWith("SENDER DOMAIN:") || line.startsWith("ATTACHMENTS:") || line.startsWith("HEADERS:") || line.startsWith("URL(s) RESULT:")) {
+                    line = `<strong>${line}</strong>`;
+                }
+    
+                if (line.includes('OTX result: pulse count:')) {
+                    const count = parseInt(line.split(':')[2]);
+                    if (count === 0) colorClass = 'text-success'; // Green for pulse count 0
+                    else if (count <= 5) colorClass = 'text-warning'; // Dark orange for pulse count 1-5
+                    else colorClass = 'text-danger'; // Dark red for pulse count > 5
+                } 
+                //talos
+                if (line.includes('Talos results: ')) {
+                    const result = line.split(':')[1].trim();
+                    if (result === 'malicious' || result === 'poor' || result === 'untrusted') colorClass = 'text-danger'; // Dark red for malicious and poor
+                    else if (result === 'suspicious' || result ==='neutral' || result === 'unknown') colorClass = 'text-warning'; // Dark orange for suspicious
+                    else if (result === 'clean' || result ==='favorable') colorClass = 'text-success'; // Green for clean
+                } 
+                
+                //abusedb
+                else if (line.includes('AbuseDB score:')) {
+                    const score = parseInt(line.split(':')[1]);
+                    if (score <= 5) colorClass = 'text-success'; // Green for score 0-5
+                    else if (score <= 18) colorClass = 'text-warning'; // Orange for score 6-18
+                    else colorClass = 'text-danger'; // Dark red for score > 18
+                }
+
+                //virustotal
+                else if (line.includes('VT result:')) {
+                    if (line.includes('malicious') || line.includes('suspicious')) colorClass = 'text-danger'; // Dark red for malicious
+                    else if (line.includes('spam') || line.includes('hash not found')) colorClass = 'text-warning'; // Dark orange for suspicious
+                    else if (line.includes('clean')) colorClass = 'text-success'; // Green for clean
+                }
+
+                else if (line.includes('spf: ')){
+                    const spf_res = line.split(':')[1].trim();
+                    if (spf_res === 'pass') colorClass = 'text-success'; // Green for pass
+                    else if (spf_res === 'fail') colorClass = 'text-danger'; // Dark red for fail
+                    else colorClass = 'text-warning'; // Dark orange for buestguess and None
+                }
+                else if (line.includes('dkim: ')){
+                    const spf_res = line.split(':')[1].trim();
+                    if (spf_res === 'pass') colorClass = 'text-success'; // Green for pass
+                    else if (spf_res === 'fail') colorClass = 'text-danger'; // Dark red for fail
+                    else colorClass = 'text-warning'; // Dark orange for buestguess and None
+                }
+                else if (line.includes('dmarc: ')){
+                    const spf_res = line.split(':')[1].trim();
+                    if (spf_res === 'pass') colorClass = 'text-success'; // Green for pass
+                    else if (spf_res === 'fail') colorClass = 'text-danger'; // Dark red for fail
+                    else colorClass = 'text-warning'; // Dark orange for buestguess and None
+                }
+                else if (line.includes('compauth: ')){
+                    const spf_res = line.split(':')[1].trim();
+                    if (spf_res === 'pass') colorClass = 'text-success'; // Green for pass
+                    else if (spf_res === 'fail') colorClass = 'text-danger'; // Dark red for fail
+                    else colorClass = 'text-warning'; // Dark orange for buestguess and None
+                }
+
+                return `<span class="${colorClass}">${line}</span>`;
+            });
+    
+            outputElement.innerHTML = updatedLines.join('<br>');
+        }
+        
+        // Colorize output when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            colorizeOutput();
+            checkForOutput(); // Check for output initially
+        });
+        
+        // Copy to clipboard function
+        document.getElementById('copy-btn').addEventListener('click', function() {
+            const outputText = document.getElementById('output-text');
+            navigator.clipboard.writeText(outputText.innerText).then(function() {
+                alert('Output copied to clipboard!');
+            }, function(err) {
+                alert('Error copying text: ', err);
+            });
+        });
+
+        // Function to append action taken to the output box
+        function appendAction(event) {
+            event.preventDefault(); // Prevent default form submission
+            const actionsForm = document.getElementById('actions-form');
+            const actionsTaken = actionsForm.actions_taken.value; // Get the input value
+            const severityLevel = actionsForm.severity_level.value; // Get the dropdown value
+            
+            // Append the new action to the output box
+            const outputText = document.getElementById('output-text');
+            //const mytext = severityLevel.split('_');
+            const newAction = `Action Taken: ${actionsTaken} <br />Marked the mail as ${severityLevel.toUpperCase()} and RESOLVED on PhishER`;
+            outputText.innerHTML += `<br>${newAction}`; // Append to output with line break
+
+            // Clear the form inputs after submission
+            actionsForm.reset();
+            document.getElementById('action-submit-btn').classList.add('hidden'); // Hide the submit button after action is taken
+
+            // Send the data to the server
+            fetch('/action', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    actions_taken: actionsTaken,
+                    severity_level: severityLevel,
+                }),
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log('Data sent successfully');
+                } else {
+                    console.error('Error sending data:', response.statusText);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+
+            return false; // Prevent any further action
+        }
+
+        // Function to check for output data and toggle visibility of the submit button
+        function checkForOutput() {
+            const outputText = document.getElementById('output-text');
+            const actionSubmitButton = document.getElementById('action-submit-btn');
+
+            if (outputText.innerText.trim() !== "Your output will appear here.") {
+                actionSubmitButton.classList.remove('hidden'); // Show the button
+            } else {
+                actionSubmitButton.classList.add('hidden'); // Hide the button
+            }
+        }
+    </script>
+</body>
+</html>
